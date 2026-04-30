@@ -126,7 +126,7 @@
 
 <!-- ⚠️ APNA APPS SCRIPT URL YAHAN DAALO -->
 <script>
-  var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw0yZYANMYRuCUCM473a_qXt-DPqULhnqQGw92qrPKnAXb5vM47-J_xbnMxJy6vBu7I/exec";
+  var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzN_Gg8SuzLr4KZJ1tKbddc9O32eNXAPxTiqsysMzpVVHtnn9chj-mWO6b6lxqE2yQ/exec";
 </script>
 
 <!-- PROCESSING OVERLAY -->
@@ -388,7 +388,7 @@
     totBar.style.display='block';procBtn.style.display='block';
   }
 
-  // ── Process Order via fetch POST ──
+  // ── Process Order via GET (fixes CORS block from GitHub Pages) ──
   function processOrder(){
     if(!cart.length){alert('Cart is empty!');return;}
     var customerName=document.getElementById('customerName').value.trim()||'Walk-in Customer';
@@ -410,10 +410,11 @@
       })
     };
 
-    fetch(SCRIPT_URL,{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify(orderData)
+    // GET request with encoded JSON — avoids CORS preflight block
+    var encodedData=encodeURIComponent(JSON.stringify(orderData));
+    fetch(SCRIPT_URL+'?action=processOrder&data='+encodedData,{
+      method:'GET',
+      redirect:'follow'
     })
     .then(function(r){return r.json();})
     .then(function(res){
