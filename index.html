@@ -292,36 +292,35 @@
     document.getElementById('liveStatus').textContent='⏹ Camera band hai';
   }
 
-  // ── SKU Fetch via fetch() ──
-  function function fetchSku(skuCode){
-  skuCode = skuCode.trim().toUpperCase();
-  document.getElementById('skuInput').value = skuCode;
-
-  // CORS fix: no-cors workaround
-  fetch(SCRIPT_URL + '?action=lookup&sku=' + encodeURIComponent(skuCode), {
-    method: 'GET',
-    redirect: 'follow'
-  })
-  .then(function(r){ return r.json(); })
-  .then(function(result){
-    window._lastResult = result;
-    pendingSku = skuCode;
-    showProductPreview(result, skuCode);
-    hideAutoFetch();
-    document.getElementById('liveStatus').textContent = result.found
-      ? '✅ ' + result.name + ' — qty set karo & ADD TO CART'
-      : '❌ SKU nahi mila: ' + skuCode;
-  })
-  .catch(function(err){
-    // CORS block hone pe manual entry suggest karo
-    document.getElementById('liveStatus').textContent = '⚠️ Connection error — Script URL check karo';
-    showAutoFetch('❌ Error: ' + err.message);
-  });
-}
+  // ── FIX 1: Removed duplicate 'function' keyword ──
+  function fetchSku(skuCode){
+    skuCode=skuCode.trim().toUpperCase();
+    document.getElementById('skuInput').value=skuCode;
+    fetch(SCRIPT_URL+'?action=lookup&sku='+encodeURIComponent(skuCode),{
+      method:'GET',
+      redirect:'follow'
+    })
+    .then(function(r){return r.json();})
+    .then(function(result){
+      window._lastResult=result;
+      pendingSku=skuCode;
+      showProductPreview(result,skuCode);
+      hideAutoFetch();
+      document.getElementById('liveStatus').textContent=result.found
+        ?'✅ '+result.name+' — qty set karo & ADD TO CART'
+        :'❌ SKU nahi mila: '+skuCode;
+    })
+    .catch(function(err){
+      hideAutoFetch();
+      document.getElementById('liveStatus').textContent='⚠️ Connection error — Script URL check karo';
+      document.getElementById('productPreview').style.display='none';
+      document.getElementById('actionPanel').style.display='none';
+    });
+  }
 
   function manualFetch(){
     var sku=document.getElementById('skuInput').value.trim();
-    if(!sku){document.getElementById('skuInput').focus();return}
+    if(!sku){document.getElementById('skuInput').focus();return;}
     hidePanels();showAutoFetch('📡 Fetch: '+sku+'...');
     fetchSku(sku);
     document.getElementById('skuInput').value='';
@@ -357,8 +356,8 @@
     var qty=parseInt(document.getElementById('qtyDisplay').value)||1;
     var r=window._lastResult;
     var existing=cart.findIndex(function(c){return c.sku===r.sku});
-    if(existing>=0){cart[existing].qty+=qty}
-    else{cart.push({sku:r.sku,name:r.name,category:r.category,price:r.price,sgst:r.sgst||0,igst:r.igst||0,qty:qty})}
+    if(existing>=0){cart[existing].qty+=qty;}
+    else{cart.push({sku:r.sku,name:r.name,category:r.category,price:r.price,sgst:r.sgst||0,igst:r.igst||0,qty:qty});}
     renderCart(); hidePanels();
     document.getElementById('qtyDisplay').value=1;
     pendingSku=null; window._lastResult=null;
@@ -367,13 +366,13 @@
     beep(); refreshStats();
   }
 
-  function removeFromCart(idx){cart.splice(idx,1);renderCart()}
+  function removeFromCart(idx){cart.splice(idx,1);renderCart();}
 
   function renderCart(){
     var el=document.getElementById('cartList'),badge=document.getElementById('cartBadge');
     var totBar=document.getElementById('cartTotalsBar'),procBtn=document.getElementById('processBtn');
     badge.textContent=cart.length+(cart.length===1?' item':' items');
-    if(!cart.length){el.innerHTML='<div class="cart-empty">Cart is empty.</div>';totBar.style.display='none';procBtn.style.display='none';return}
+    if(!cart.length){el.innerHTML='<div class="cart-empty">Cart is empty.</div>';totBar.style.display='none';procBtn.style.display='none';return;}
     var subTotal=0,totalSGST=0,totalIGST=0,html='';
     for(var i=0;i<cart.length;i++){
       var item=cart[i],lineBase=item.price*item.qty,sgstAmt=lineBase*item.sgst/100,igstAmt=lineBase*item.igst/100,lineTotal=lineBase+sgstAmt+igstAmt;
@@ -391,7 +390,7 @@
 
   // ── Process Order via fetch POST ──
   function processOrder(){
-    if(!cart.length){alert('Cart is empty!');return}
+    if(!cart.length){alert('Cart is empty!');return;}
     var customerName=document.getElementById('customerName').value.trim()||'Walk-in Customer';
     document.getElementById('processBtn').disabled=true;
     document.getElementById('procMsg').textContent='💾 Saving data...';
@@ -404,20 +403,23 @@
     },1500);
 
     var orderData={
-      orderNumber:currentOrder, customerName:customerName,
-      items:cart.map(function(item){return{sku:item.sku,name:item.name,category:item.category,qty:item.qty,price:item.price,sgst:item.sgst,igst:item.igst}})
+      orderNumber:currentOrder,
+      customerName:customerName,
+      items:cart.map(function(item){
+        return{sku:item.sku,name:item.name,category:item.category,qty:item.qty,price:item.price,sgst:item.sgst,igst:item.igst};
+      })
     };
 
-    fetch(SCRIPT_URL, {
+    fetch(SCRIPT_URL,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify(orderData)
     })
-    .then(function(r){return r.json()})
+    .then(function(r){return r.json();})
     .then(function(res){
       document.getElementById('processingOverlay').style.display='none';
       document.getElementById('processBtn').disabled=false;
-      if(!res.success){alert('❌ Error: '+(res.error||'Unknown error'));return}
+      if(!res.success){alert('❌ Error: '+(res.error||'Unknown error'));return;}
       for(var i=0;i<cart.length;i++) recentLog.unshift({sku:cart[i].sku,name:cart[i].name,found:true,type:'OUT',qty:cart[i].qty});
       if(recentLog.length>30)recentLog.length=30;
       renderLog();
@@ -447,8 +449,12 @@
       rows+='<tr><td>'+(i+1)+'</td><td>'+esc(it.sku)+'</td><td class="left">'+esc(it.name)+'</td><td>'+it.qty+'</td><td>₹'+parseFloat(it.price).toFixed(2)+'</td><td>'+it.sgst+'%</td><td>₹'+parseFloat(it.sgstAmt).toFixed(2)+'</td><td>'+it.igst+'%</td><td>₹'+parseFloat(it.igstAmt).toFixed(2)+'</td><td><strong>₹'+parseFloat(it.lineTotal).toFixed(2)+'</strong></td></tr>';
     }
     tbody.innerHTML=rows;
-    if(res.pdfUrl){document.getElementById('btnOpenPDF').onclick=function(){window.open(res.pdfUrl,'_blank')};document.getElementById('btnOpenPDF').style.display='block'}
-    else{document.getElementById('btnOpenPDF').style.display='none'}
+    if(res.pdfUrl){
+      document.getElementById('btnOpenPDF').onclick=function(){window.open(res.pdfUrl,'_blank');};
+      document.getElementById('btnOpenPDF').style.display='block';
+    } else {
+      document.getElementById('btnOpenPDF').style.display='none';
+    }
     document.getElementById('invoiceModal').style.display='block';
   }
 
@@ -463,15 +469,15 @@
     refreshStats();
   }
 
-  function changeQty(delta){var el=document.getElementById('qtyDisplay');el.value=Math.max(1,(parseInt(el.value)||1)+delta)}
+  function changeQty(delta){var el=document.getElementById('qtyDisplay');el.value=Math.max(1,(parseInt(el.value)||1)+delta);}
 
   // ── Stats ──
   function refreshStats(){
     fetch(SCRIPT_URL+'?action=summary')
-    .then(function(r){return r.json()})
+    .then(function(r){return r.json();})
     .then(function(s){
-      document.getElementById('statTotal').textContent=s.total;
-      document.getElementById('statFound').textContent=s.found;
+      document.getElementById('statTotal').textContent=s.total||0;
+      document.getElementById('statFound').textContent=s.found||0;
       document.getElementById('statIn').textContent=s.totalIn||0;
       document.getElementById('statOut').textContent=s.totalOut||0;
     }).catch(function(){});
@@ -479,7 +485,7 @@
 
   function renderLog(){
     var el=document.getElementById('logList');
-    if(!recentLog.length){el.innerHTML='<div style="color:#4b5563;font-size:12px;text-align:center;padding:18px 0;">Koi scan nahi hua abhi</div>';return}
+    if(!recentLog.length){el.innerHTML='<div style="color:#4b5563;font-size:12px;text-align:center;padding:18px 0;">Koi scan nahi hua abhi</div>';return;}
     el.innerHTML=recentLog.map(function(s){
       var tc=!s.found?'t-err':s.type==='OUT'?'t-out':'t-in';
       var tl=!s.found?'ERR':s.type;
@@ -488,11 +494,11 @@
     }).join('');
   }
 
-  function showAutoFetch(msg){var bar=document.getElementById('autoFetchBar');bar.style.display='flex';document.getElementById('autoFetchMsg').textContent=msg}
-  function hideAutoFetch(){document.getElementById('autoFetchBar').style.display='none'}
-  function hidePanels(){document.getElementById('productPreview').style.display='none';document.getElementById('actionPanel').style.display='none'}
-  function beep(){try{var ctx=new(window.AudioContext||window.webkitAudioContext)(),osc=ctx.createOscillator(),gain=ctx.createGain();osc.connect(gain);gain.connect(ctx.destination);osc.type='square';osc.frequency.value=1100;gain.gain.setValueAtTime(0.2,ctx.currentTime);gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.1);osc.start(ctx.currentTime);osc.stop(ctx.currentTime+0.1)}catch(e){}}
-  function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+  function showAutoFetch(msg){var bar=document.getElementById('autoFetchBar');bar.style.display='flex';document.getElementById('autoFetchMsg').textContent=msg;}
+  function hideAutoFetch(){document.getElementById('autoFetchBar').style.display='none';}
+  function hidePanels(){document.getElementById('productPreview').style.display='none';document.getElementById('actionPanel').style.display='none';}
+  function beep(){try{var ctx=new(window.AudioContext||window.webkitAudioContext)(),osc=ctx.createOscillator(),gain=ctx.createGain();osc.connect(gain);gain.connect(ctx.destination);osc.type='square';osc.frequency.value=1100;gain.gain.setValueAtTime(0.2,ctx.currentTime);gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.1);osc.start(ctx.currentTime);osc.stop(ctx.currentTime+0.1);}catch(e){}}
+  function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 </script>
 </body>
 </html>
