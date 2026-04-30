@@ -126,7 +126,7 @@
 
 <!-- ⚠️ APNA APPS SCRIPT URL YAHAN DAALO -->
 <script>
-  var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzFa2Z4AhUs6KgCJ_LmIPAZYR22AtzvfZyaBh0EV6kWRJLMRr7uVsjo9Obn1MFuTB6g/exec";
+  var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw0yZYANMYRuCUCM473a_qXt-DPqULhnqQGw92qrPKnAXb5vM47-J_xbnMxJy6vBu7I/exec";
 </script>
 
 <!-- PROCESSING OVERLAY -->
@@ -293,20 +293,31 @@
   }
 
   // ── SKU Fetch via fetch() ──
-  function fetchSku(skuCode){
-    skuCode=skuCode.trim().toUpperCase();
-    document.getElementById('skuInput').value=skuCode;
-    fetch(SCRIPT_URL+'?action=lookup&sku='+encodeURIComponent(skuCode))
-    .then(function(r){return r.json()})
-    .then(function(result){
-      window._lastResult=result;
-      pendingSku=skuCode;
-      showProductPreview(result,skuCode);
-      hideAutoFetch();
-      document.getElementById('liveStatus').textContent=result.found?'✅ '+result.name+' — qty set karo & ADD TO CART':'❌ SKU nahi mila: '+skuCode;
-    })
-    .catch(function(err){showAutoFetch('❌ Connection Error — Script URL check karo')});
-  }
+  function function fetchSku(skuCode){
+  skuCode = skuCode.trim().toUpperCase();
+  document.getElementById('skuInput').value = skuCode;
+
+  // CORS fix: no-cors workaround
+  fetch(SCRIPT_URL + '?action=lookup&sku=' + encodeURIComponent(skuCode), {
+    method: 'GET',
+    redirect: 'follow'
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(result){
+    window._lastResult = result;
+    pendingSku = skuCode;
+    showProductPreview(result, skuCode);
+    hideAutoFetch();
+    document.getElementById('liveStatus').textContent = result.found
+      ? '✅ ' + result.name + ' — qty set karo & ADD TO CART'
+      : '❌ SKU nahi mila: ' + skuCode;
+  })
+  .catch(function(err){
+    // CORS block hone pe manual entry suggest karo
+    document.getElementById('liveStatus').textContent = '⚠️ Connection error — Script URL check karo';
+    showAutoFetch('❌ Error: ' + err.message);
+  });
+}
 
   function manualFetch(){
     var sku=document.getElementById('skuInput').value.trim();
