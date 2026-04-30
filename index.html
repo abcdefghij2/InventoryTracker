@@ -7,7 +7,7 @@
   @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600&display=swap');
   :root{--bci-navy:#1a237e;--bci-blue:#1565c0;--bci-sky:#1e88e5;--green:#2e7d32;--green-l:#43a047;--red:#c62828;--amber:#f9a825;--bg:#0d1117;--card:#161b22;--card2:#1c2230;--border:#30363d;--text:#e6edf3;--sub:#8b949e;--gold:#f0c040}
   *{box-sizing:border-box;margin:0;padding:0}
-  body{background:var(--bg);font-family:'Inter',sans-serif;color:var(--text);padding:10px 10px 40px;min-height:100vh}
+  body{background:var(--bg);font-family:'Inter',sans-serif;color:var(--text);padding:10px 10px 80px;min-height:100vh}
   .header{background:linear-gradient(135deg,var(--bci-navy) 0%,#0d1117 100%);border:1px solid #283593;border-radius:16px;padding:14px 16px;margin-bottom:12px;display:flex;align-items:center;gap:14px}
   .bci-logo{width:50px;height:50px;border-radius:12px;background:linear-gradient(135deg,var(--bci-blue),var(--bci-navy));border:2px solid #3949ab;display:flex;align-items:center;justify-content:center;font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;color:#fff;flex-shrink:0;box-shadow:0 4px 14px rgba(30,136,229,0.35)}
   .header-title{font-family:'Rajdhani',sans-serif;font-size:19px;font-weight:700;letter-spacing:0.8px;color:#fff}
@@ -120,13 +120,36 @@
   .log-qty{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:12px;flex-shrink:0}
   .q-in{color:#4ade80}.q-out{color:#fb923c}
   .refresh-btn{width:100%;margin-top:10px;padding:9px;background:var(--card2);border:1px solid var(--border);border-radius:10px;color:var(--sub);font-size:12px;font-weight:600;cursor:pointer}
+
+  /* ── FIX 2: Last Invoice sticky bar ── */
+  #lastInvoiceBar{
+    display:none;position:fixed;bottom:0;left:0;right:0;z-index:500;
+    background:linear-gradient(135deg,#1b5e20,#2e7d32);
+    padding:10px 14px;align-items:center;gap:10px;
+    box-shadow:0 -4px 20px rgba(0,0,0,0.55);
+    border-top:1px solid #2e7d32;
+  }
+  #lastInvoiceBar.visible{display:flex}
+  .lib-info{flex:1;min-width:0}
+  .lib-title{font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;color:#a7f3d0;line-height:1}
+  .lib-num{font-size:10px;color:#6ee7b7;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .lib-dl-btn{
+    padding:9px 14px;background:rgba(255,255,255,0.15);
+    border:1px solid rgba(255,255,255,0.3);border-radius:9px;
+    color:#fff;font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;
+    cursor:pointer;flex-shrink:0;white-space:nowrap;
+  }
+  .lib-close-btn{
+    padding:8px 10px;background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.1);
+    border-radius:9px;color:#aaa;font-size:13px;cursor:pointer;flex-shrink:0;
+  }
 </style>
 </head>
 <body>
 
 <!-- ⚠️ APNA APPS SCRIPT URL YAHAN DAALO -->
 <script>
-  var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw5PAO1WAP0p_lF3vctHtEdAsShS8bU36C_QXM20L1B3tu_QQ2PQ4rYIb1iIe9nMqCj/exec";
+  var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxjwI7gq9FqaBooNLm84WWTd7YkMpETIpFjJWfJBc4PvSc6ZMngdx8DF97OlM-LWCUq/exec";
 </script>
 
 <!-- PROCESSING OVERLAY -->
@@ -168,6 +191,16 @@
     <button class="btn-pdf" id="btnOpenPDF">📄 Open PDF</button>
     <button class="btn-new" onclick="startNewOrder()">➕ New Order</button>
   </div>
+</div>
+
+<!-- ── FIX 2: Last Invoice sticky bar (shown after New Order) ── -->
+<div id="lastInvoiceBar">
+  <div class="lib-info">
+    <div class="lib-title">✅ Last Invoice Ready</div>
+    <div class="lib-num" id="libOrderNum">—</div>
+  </div>
+  <button class="lib-dl-btn" id="libDownloadBtn">📥 Download PDF</button>
+  <button class="lib-close-btn" onclick="document.getElementById('lastInvoiceBar').classList.remove('visible')">✕</button>
 </div>
 
 <!-- HEADER -->
@@ -264,7 +297,9 @@
 </div>
 
 <script>
+  // ── FIX 2: Global vars to remember last invoice PDF ──
   var cart=[], pendingSku=null, currentOrder=genOrderNum(), recentLog=[];
+  var lastPdfUrl='', lastOrderNum='';
 
   window.onload=function(){
     document.getElementById('orderNumberDisplay').textContent=currentOrder;
@@ -292,7 +327,6 @@
     document.getElementById('liveStatus').textContent='⏹ Camera band hai';
   }
 
-  // ── FIX 1: Removed duplicate 'function' keyword ──
   function fetchSku(skuCode){
     skuCode=skuCode.trim().toUpperCase();
     document.getElementById('skuInput').value=skuCode;
@@ -388,7 +422,7 @@
     totBar.style.display='block';procBtn.style.display='block';
   }
 
-  // ── Process Order via GET (fixes CORS block from GitHub Pages) ──
+  // ── Process Order ──
   function processOrder(){
     if(!cart.length){alert('Cart is empty!');return;}
     var customerName=document.getElementById('customerName').value.trim()||'Walk-in Customer';
@@ -410,7 +444,6 @@
       })
     };
 
-    // GET request with encoded JSON — avoids CORS preflight block
     var encodedData=encodeURIComponent(JSON.stringify(orderData));
     fetch(SCRIPT_URL+'?action=processOrder&data='+encodedData,{
       method:'GET',
@@ -436,6 +469,10 @@
 
   // ── Invoice Modal ──
   function showInvoiceModal(res){
+    // ── FIX 2: Save PDF info globally so it survives new order ──
+    lastPdfUrl   = res.pdfUrl || '';
+    lastOrderNum = res.orderNumber || '';
+
     document.getElementById('invOrderNum').textContent=res.orderNumber;
     document.getElementById('invDate').textContent=res.dateStr;
     document.getElementById('invTime').textContent=res.timeStr;
@@ -459,8 +496,18 @@
     document.getElementById('invoiceModal').style.display='block';
   }
 
+  // ── FIX 2: startNewOrder now shows persistent sticky bar ──
   function startNewOrder(){
     document.getElementById('invoiceModal').style.display='none';
+
+    // Show sticky download bar if we have a PDF URL
+    if(lastPdfUrl){
+      var bar=document.getElementById('lastInvoiceBar');
+      document.getElementById('libOrderNum').textContent=lastOrderNum;
+      document.getElementById('libDownloadBtn').onclick=function(){window.open(lastPdfUrl,'_blank');};
+      bar.classList.add('visible');
+    }
+
     cart=[];renderCart();
     currentOrder=genOrderNum();
     document.getElementById('orderNumberDisplay').textContent=currentOrder;
