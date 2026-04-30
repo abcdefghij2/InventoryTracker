@@ -121,17 +121,16 @@
   .q-in{color:#4ade80}.q-out{color:#fb923c}
   .refresh-btn{width:100%;margin-top:10px;padding:9px;background:var(--card2);border:1px solid var(--border);border-radius:10px;color:var(--sub);font-size:12px;font-weight:600;cursor:pointer}
 
-  /* ── Sticky last-invoice download bar ── */
   #lastInvoiceBar{
     position:fixed;bottom:0;left:0;right:0;z-index:600;
     background:linear-gradient(135deg,#1b5e20 0%,#2e7d32 100%);
     border-top:2px solid #43a047;
     padding:11px 14px;
-    display:none;                /* hidden by default */
+    display:none;
     align-items:center;gap:10px;
     box-shadow:0 -4px 24px rgba(0,0,0,0.6);
   }
-  #lastInvoiceBar.show{ display:flex; }  /* JS adds this class */
+  #lastInvoiceBar.show{ display:flex; }
   .lib-info{ flex:1;min-width:0; }
   .lib-label{ font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;color:#a7f3d0;line-height:1; }
   .lib-num{ font-size:10px;color:#6ee7b7;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
@@ -151,7 +150,7 @@
 <body>
 
 <script>
-  var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw64xoT-oXKk_yVPJkpaI4qLDFcFNem8og6JKlFvjJsZ9ZWYQ7G7iI-Zu_fdPxCPH8I/exec";
+  var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwgi2k-EZ1Acjvr3Nfm9e2AKpVngvgduWCeWV6OFr94ARcQnW7JloVLp5GyB1B9qBR7/exec";
 </script>
 
 <!-- PROCESSING OVERLAY -->
@@ -189,7 +188,6 @@
     </div>
     <div class="inv-footer">Thank you for your business! | Business Coaching India LLP | BCI</div>
   </div>
-  <!-- Invoice action buttons -->
   <div class="inv-actions">
     <button class="btn-pdf" id="btnOpenPDF" style="display:none">📄 Open / Download PDF</button>
     <button class="btn-new" onclick="startNewOrder()">➕ New Order</button>
@@ -197,7 +195,7 @@
   <div id="pdfErrMsg" style="display:none;color:#f87171;font-size:11px;text-align:center;margin-top:6px;padding:0 16px;"></div>
 </div>
 
-<!-- ── STICKY LAST-INVOICE BAR (shown after New Order click) ── -->
+<!-- STICKY LAST-INVOICE BAR -->
 <div id="lastInvoiceBar">
   <div class="lib-info">
     <div class="lib-label">✅ Last Invoice Saved</div>
@@ -301,9 +299,8 @@
 </div>
 
 <script>
-  /* ─── State ─── */
   var cart=[], pendingSku=null, currentOrder=genOrderNum(), recentLog=[];
-  var lastPdfUrl='', lastOrderNum='';   // persist PDF across new-order reset
+  var lastPdfUrl='', lastOrderNum='';
 
   window.onload=function(){
     document.getElementById('orderNumberDisplay').textContent=currentOrder;
@@ -316,7 +313,6 @@
     return 'BCI-'+now.getFullYear()+pad(now.getMonth()+1)+pad(now.getDate())+'-'+pad(now.getHours())+pad(now.getMinutes())+pad(now.getSeconds());
   }
 
-  /* ─── Camera iframe messages ─── */
   function onFrameMessage(e){
     var d=e.data; if(!d||typeof d!=='object')return;
     if(d.type==='CAMERA_READY'){
@@ -342,7 +338,6 @@
     document.getElementById('liveStatus').textContent='⏹ Camera band hai';
   }
 
-  /* ─── SKU fetch ─── */
   function fetchSku(skuCode){
     skuCode=skuCode.trim().toUpperCase();
     document.getElementById('skuInput').value=skuCode;
@@ -373,7 +368,6 @@
     document.getElementById('skuInput').value='';
   }
 
-  /* ─── Product Preview ─── */
   function showProductPreview(result,sku){
     var box=document.getElementById('productPreview'),panel=document.getElementById('actionPanel');
     box.style.display='none'; void box.offsetWidth; box.style.display='block';
@@ -398,7 +392,6 @@
     }
   }
 
-  /* ─── Cart ─── */
   function addToCart(){
     if(!pendingSku||!window._lastResult||!window._lastResult.found)return;
     var qty=parseInt(document.getElementById('qtyDisplay').value)||1;
@@ -436,7 +429,7 @@
     totBar.style.display='block'; procBtn.style.display='block';
   }
 
-  /* ─── Process Order ─── */
+  /* ── Process Order via POST (avoids GET URL-length limits) ── */
   function processOrder(){
     if(!cart.length){alert('Cart is empty!');return;}
     var customerName=document.getElementById('customerName').value.trim()||'Walk-in Customer';
@@ -447,7 +440,7 @@
 
     setTimeout(function(){
       document.getElementById('procMsg').textContent='📄 PDF ban raha hai...';
-      document.getElementById('procSub').textContent='Invoice create ho rahi hai, thoda wait karo';
+      document.getElementById('procSub').textContent='Invoice create ho rahi hai, thoda wait karo (~15-20 sec)';
     },2000);
 
     var orderData={
@@ -458,8 +451,13 @@
       })
     };
 
-    var encodedData=encodeURIComponent(JSON.stringify(orderData));
-    fetch(SCRIPT_URL+'?action=processOrder&data='+encodedData,{method:'GET',redirect:'follow'})
+    // ── Use POST so large carts don't hit URL length limits ──
+    fetch(SCRIPT_URL, {
+      method: 'POST',
+      redirect: 'follow',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(orderData)
+    })
     .then(function(r){return r.json();})
     .then(function(res){
       document.getElementById('processingOverlay').style.display='none';
@@ -480,9 +478,7 @@
     });
   }
 
-  /* ─── Invoice Modal ─── */
   function showInvoiceModal(res){
-    // Save globally so sticky bar can use it after new order
     lastPdfUrl   = (res.pdfUrl && res.pdfUrl.length > 5) ? res.pdfUrl : '';
     lastOrderNum = res.orderNumber || '';
 
@@ -502,7 +498,6 @@
     }
     tbody.innerHTML=rows;
 
-    // PDF button
     var pdfBtn=document.getElementById('btnOpenPDF');
     var pdfErr=document.getElementById('pdfErrMsg');
     if(lastPdfUrl){
@@ -518,17 +513,13 @@
     document.getElementById('invoiceModal').style.display='block';
   }
 
-  /* ─── New Order — shows sticky bar ─── */
   function startNewOrder(){
     document.getElementById('invoiceModal').style.display='none';
-
-    // Show sticky bar with last PDF link
     if(lastPdfUrl){
       document.getElementById('libNum').textContent=lastOrderNum;
       document.getElementById('libDlBtn').onclick=function(){window.open(lastPdfUrl,'_blank');};
       document.getElementById('lastInvoiceBar').classList.add('show');
     }
-
     cart=[]; renderCart();
     currentOrder=genOrderNum();
     document.getElementById('orderNumberDisplay').textContent=currentOrder;
@@ -543,7 +534,6 @@
     el.value=Math.max(1,(parseInt(el.value)||1)+delta);
   }
 
-  /* ─── Stats ─── */
   function refreshStats(){
     fetch(SCRIPT_URL+'?action=summary')
     .then(function(r){return r.json();})
