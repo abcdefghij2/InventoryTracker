@@ -7,7 +7,7 @@
   @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600&display=swap');
   :root{--bci-navy:#1a237e;--bci-blue:#1565c0;--bci-sky:#1e88e5;--green:#2e7d32;--green-l:#43a047;--red:#c62828;--amber:#f9a825;--bg:#0d1117;--card:#161b22;--card2:#1c2230;--border:#30363d;--text:#e6edf3;--sub:#8b949e;--gold:#f0c040}
   *{box-sizing:border-box;margin:0;padding:0}
-  body{background:var(--bg);font-family:'Inter',sans-serif;color:var(--text);padding:10px 10px 90px;min-height:100vh}
+  body{background:var(--bg);font-family:'Inter',sans-serif;color:var(--text);padding:10px 10px 40px;min-height:100vh}
   .header{background:linear-gradient(135deg,var(--bci-navy) 0%,#0d1117 100%);border:1px solid #283593;border-radius:16px;padding:14px 16px;margin-bottom:12px;display:flex;align-items:center;gap:14px}
   .bci-logo{width:50px;height:50px;border-radius:12px;background:linear-gradient(135deg,var(--bci-blue),var(--bci-navy));border:2px solid #3949ab;display:flex;align-items:center;justify-content:center;font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;color:#fff;flex-shrink:0;box-shadow:0 4px 14px rgba(30,136,229,0.35)}
   .header-title{font-family:'Rajdhani',sans-serif;font-size:19px;font-weight:700;letter-spacing:0.8px;color:#fff}
@@ -120,37 +120,13 @@
   .log-qty{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:12px;flex-shrink:0}
   .q-in{color:#4ade80}.q-out{color:#fb923c}
   .refresh-btn{width:100%;margin-top:10px;padding:9px;background:var(--card2);border:1px solid var(--border);border-radius:10px;color:var(--sub);font-size:12px;font-weight:600;cursor:pointer}
-
-  #lastInvoiceBar{
-    position:fixed;bottom:0;left:0;right:0;z-index:600;
-    background:linear-gradient(135deg,#1b5e20 0%,#2e7d32 100%);
-    border-top:2px solid #43a047;
-    padding:11px 14px;
-    display:none;
-    align-items:center;gap:10px;
-    box-shadow:0 -4px 24px rgba(0,0,0,0.6);
-  }
-  #lastInvoiceBar.show{ display:flex; }
-  .lib-info{ flex:1;min-width:0; }
-  .lib-label{ font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;color:#a7f3d0;line-height:1; }
-  .lib-num{ font-size:10px;color:#6ee7b7;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
-  .lib-dl{
-    padding:10px 16px;background:#fff;border:none;border-radius:10px;
-    color:#1b5e20;font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;
-    cursor:pointer;flex-shrink:0;white-space:nowrap;
-    box-shadow:0 2px 8px rgba(0,0,0,0.2);
-  }
-  .lib-close{
-    width:32px;height:32px;background:rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.15);
-    border-radius:8px;color:#aaa;font-size:16px;cursor:pointer;flex-shrink:0;
-    display:flex;align-items:center;justify-content:center;
-  }
 </style>
 </head>
 <body>
 
+<!-- ⚠️ APNA APPS SCRIPT URL YAHAN DAALO -->
 <script>
-  var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwgi2k-EZ1Acjvr3Nfm9e2AKpVngvgduWCeWV6OFr94ARcQnW7JloVLp5GyB1B9qBR7/exec";
+  var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzwCL_MtXd1W1HHolUKgAwCo-za8KwEFEL8qAQuFrCpiJGHjw37LdS335LwsQNFA3c1/exec";
 </script>
 
 <!-- PROCESSING OVERLAY -->
@@ -189,20 +165,9 @@
     <div class="inv-footer">Thank you for your business! | Business Coaching India LLP | BCI</div>
   </div>
   <div class="inv-actions">
-    <button class="btn-pdf" id="btnOpenPDF" style="display:none">📄 Open / Download PDF</button>
+    <button class="btn-pdf" id="btnOpenPDF">📄 Open PDF</button>
     <button class="btn-new" onclick="startNewOrder()">➕ New Order</button>
   </div>
-  <div id="pdfErrMsg" style="display:none;color:#f87171;font-size:11px;text-align:center;margin-top:6px;padding:0 16px;"></div>
-</div>
-
-<!-- STICKY LAST-INVOICE BAR -->
-<div id="lastInvoiceBar">
-  <div class="lib-info">
-    <div class="lib-label">✅ Last Invoice Saved</div>
-    <div class="lib-num" id="libNum">—</div>
-  </div>
-  <button class="lib-dl" id="libDlBtn">📥 Download PDF</button>
-  <button class="lib-close" onclick="document.getElementById('lastInvoiceBar').classList.remove('show')">✕</button>
 </div>
 
 <!-- HEADER -->
@@ -300,7 +265,6 @@
 
 <script>
   var cart=[], pendingSku=null, currentOrder=genOrderNum(), recentLog=[];
-  var lastPdfUrl='', lastOrderNum='';
 
   window.onload=function(){
     document.getElementById('orderNumberDisplay').textContent=currentOrder;
@@ -313,23 +277,13 @@
     return 'BCI-'+now.getFullYear()+pad(now.getMonth()+1)+pad(now.getDate())+'-'+pad(now.getHours())+pad(now.getMinutes())+pad(now.getSeconds());
   }
 
+  // ── Frame Messages ──
   function onFrameMessage(e){
     var d=e.data; if(!d||typeof d!=='object')return;
-    if(d.type==='CAMERA_READY'){
-      document.getElementById('liveBadge').style.display='block';
-      document.getElementById('liveStatus').textContent='🟢 Barcode pe point karo — auto scan hoga';
-    }
-    if(d.type==='BARCODE_DETECTED'){
-      document.getElementById('liveStatus').textContent='✅ Scan: '+d.code;
-      hidePanels(); showAutoFetch('📡 Fetch: '+d.code); fetchSku(d.code); beep();
-    }
-    if(d.type==='CAMERA_ERROR'){
-      document.getElementById('liveBadge').style.display='none';
-      document.getElementById('liveStatus').textContent='❌ Camera error';
-    }
-    if(d.type==='NO_BARCODE_DETECTOR'){
-      document.getElementById('liveStatus').textContent='⚠️ Auto-detect nahi — manually enter karo';
-    }
+    if(d.type==='CAMERA_READY'){document.getElementById('liveBadge').style.display='block';document.getElementById('liveStatus').textContent='🟢 Barcode pe point karo — auto scan hoga';}
+    if(d.type==='BARCODE_DETECTED'){document.getElementById('liveStatus').textContent='✅ Scan: '+d.code;hidePanels();showAutoFetch('📡 Fetch: '+d.code);fetchSku(d.code);beep();}
+    if(d.type==='CAMERA_ERROR'){document.getElementById('liveBadge').style.display='none';document.getElementById('liveStatus').textContent='❌ Camera error';}
+    if(d.type==='NO_BARCODE_DETECTOR'){document.getElementById('liveStatus').textContent='⚠️ Auto-detect nahi — manually enter karo';}
   }
 
   function stopCamera(){
@@ -338,10 +292,14 @@
     document.getElementById('liveStatus').textContent='⏹ Camera band hai';
   }
 
+  // ── FIX 1: Removed duplicate 'function' keyword ──
   function fetchSku(skuCode){
     skuCode=skuCode.trim().toUpperCase();
     document.getElementById('skuInput').value=skuCode;
-    fetch(SCRIPT_URL+'?action=lookup&sku='+encodeURIComponent(skuCode),{method:'GET',redirect:'follow'})
+    fetch(SCRIPT_URL+'?action=lookup&sku='+encodeURIComponent(skuCode),{
+      method:'GET',
+      redirect:'follow'
+    })
     .then(function(r){return r.json();})
     .then(function(result){
       window._lastResult=result;
@@ -352,7 +310,7 @@
         ?'✅ '+result.name+' — qty set karo & ADD TO CART'
         :'❌ SKU nahi mila: '+skuCode;
     })
-    .catch(function(){
+    .catch(function(err){
       hideAutoFetch();
       document.getElementById('liveStatus').textContent='⚠️ Connection error — Script URL check karo';
       document.getElementById('productPreview').style.display='none';
@@ -363,19 +321,19 @@
   function manualFetch(){
     var sku=document.getElementById('skuInput').value.trim();
     if(!sku){document.getElementById('skuInput').focus();return;}
-    hidePanels(); showAutoFetch('📡 Fetch: '+sku+'...');
+    hidePanels();showAutoFetch('📡 Fetch: '+sku+'...');
     fetchSku(sku);
     document.getElementById('skuInput').value='';
   }
 
+  // ── Product Preview ──
   function showProductPreview(result,sku){
     var box=document.getElementById('productPreview'),panel=document.getElementById('actionPanel');
-    box.style.display='none'; void box.offsetWidth; box.style.display='block';
+    box.style.display='none';void box.offsetWidth;box.style.display='block';
     if(result&&result.found){
       var sc=result.stock===0?'stock-zero':result.stock<10?'stock-low':'stock-ok';
       box.className='found';
-      box.innerHTML=
-        '<div class="pv-name">✅ '+esc(result.name)+'</div>'+
+      box.innerHTML='<div class="pv-name">✅ '+esc(result.name)+'</div>'+
         '<div class="pv-sku">🔖 '+esc(String(result.sku))+' | '+esc(String(result.category))+'</div>'+
         '<div class="pv-grid">'+
         '<div class="pv-item"><div class="pi-lbl">UNIT PRICE</div><div class="pi-val price">₹'+parseFloat(result.price).toFixed(2)+'</div></div>'+
@@ -392,6 +350,7 @@
     }
   }
 
+  // ── Cart ──
   function addToCart(){
     if(!pendingSku||!window._lastResult||!window._lastResult.found)return;
     var qty=parseInt(document.getElementById('qtyDisplay').value)||1;
@@ -426,22 +385,22 @@
     document.getElementById('ctSGST').textContent='₹'+totalSGST.toFixed(2);
     document.getElementById('ctIGST').textContent='₹'+totalIGST.toFixed(2);
     document.getElementById('ctGrand').textContent='₹'+grand.toFixed(2);
-    totBar.style.display='block'; procBtn.style.display='block';
+    totBar.style.display='block';procBtn.style.display='block';
   }
 
-  /* ── Process Order via POST (avoids GET URL-length limits) ── */
+  // ── Process Order via GET (fixes CORS block from GitHub Pages) ──
   function processOrder(){
     if(!cart.length){alert('Cart is empty!');return;}
     var customerName=document.getElementById('customerName').value.trim()||'Walk-in Customer';
     document.getElementById('processBtn').disabled=true;
-    document.getElementById('procMsg').textContent='💾 Data save ho raha hai...';
-    document.getElementById('procSub').textContent='Scan Log & Store sheet update ho rahi hai';
+    document.getElementById('procMsg').textContent='💾 Saving data...';
+    document.getElementById('procSub').textContent='Writing to Scan Log & Store sheets';
     document.getElementById('processingOverlay').style.display='flex';
 
     setTimeout(function(){
-      document.getElementById('procMsg').textContent='📄 PDF ban raha hai...';
-      document.getElementById('procSub').textContent='Invoice create ho rahi hai, thoda wait karo (~15-20 sec)';
-    },2000);
+      document.getElementById('procMsg').textContent='📄 Generating Invoice...';
+      document.getElementById('procSub').textContent='Creating PDF & saving to Drive';
+    },1500);
 
     var orderData={
       orderNumber:currentOrder,
@@ -451,21 +410,18 @@
       })
     };
 
-    // ── Use POST so large carts don't hit URL length limits ──
-    fetch(SCRIPT_URL, {
-      method: 'POST',
-      redirect: 'follow',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(orderData)
+    // GET request with encoded JSON — avoids CORS preflight block
+    var encodedData=encodeURIComponent(JSON.stringify(orderData));
+    fetch(SCRIPT_URL+'?action=processOrder&data='+encodedData,{
+      method:'GET',
+      redirect:'follow'
     })
     .then(function(r){return r.json();})
     .then(function(res){
       document.getElementById('processingOverlay').style.display='none';
       document.getElementById('processBtn').disabled=false;
       if(!res.success){alert('❌ Error: '+(res.error||'Unknown error'));return;}
-      for(var i=0;i<cart.length;i++){
-        recentLog.unshift({sku:cart[i].sku,name:cart[i].name,found:true,type:'OUT',qty:cart[i].qty});
-      }
+      for(var i=0;i<cart.length;i++) recentLog.unshift({sku:cart[i].sku,name:cart[i].name,found:true,type:'OUT',qty:cart[i].qty});
       if(recentLog.length>30)recentLog.length=30;
       renderLog();
       showInvoiceModal(res);
@@ -478,10 +434,8 @@
     });
   }
 
+  // ── Invoice Modal ──
   function showInvoiceModal(res){
-    lastPdfUrl   = (res.pdfUrl && res.pdfUrl.length > 5) ? res.pdfUrl : '';
-    lastOrderNum = res.orderNumber || '';
-
     document.getElementById('invOrderNum').textContent=res.orderNumber;
     document.getElementById('invDate').textContent=res.dateStr;
     document.getElementById('invTime').textContent=res.timeStr;
@@ -490,37 +444,24 @@
     document.getElementById('invTotalSGST').textContent='₹'+res.totalSGST;
     document.getElementById('invTotalIGST').textContent='₹'+res.totalIGST;
     document.getElementById('invGrandTotal').textContent='₹'+res.grandTotal;
-
     var tbody=document.getElementById('invTableBody'),rows='',items=res.items||[];
     for(var i=0;i<items.length;i++){
       var it=items[i];
       rows+='<tr><td>'+(i+1)+'</td><td>'+esc(it.sku)+'</td><td class="left">'+esc(it.name)+'</td><td>'+it.qty+'</td><td>₹'+parseFloat(it.price).toFixed(2)+'</td><td>'+it.sgst+'%</td><td>₹'+parseFloat(it.sgstAmt).toFixed(2)+'</td><td>'+it.igst+'%</td><td>₹'+parseFloat(it.igstAmt).toFixed(2)+'</td><td><strong>₹'+parseFloat(it.lineTotal).toFixed(2)+'</strong></td></tr>';
     }
     tbody.innerHTML=rows;
-
-    var pdfBtn=document.getElementById('btnOpenPDF');
-    var pdfErr=document.getElementById('pdfErrMsg');
-    if(lastPdfUrl){
-      pdfBtn.style.display='block';
-      pdfBtn.onclick=function(){window.open(lastPdfUrl,'_blank');};
-      pdfErr.style.display='none';
+    if(res.pdfUrl){
+      document.getElementById('btnOpenPDF').onclick=function(){window.open(res.pdfUrl,'_blank');};
+      document.getElementById('btnOpenPDF').style.display='block';
     } else {
-      pdfBtn.style.display='none';
-      pdfErr.style.display='block';
-      pdfErr.textContent='⚠️ PDF generate nahi hua: '+(res.pdfError||'Unknown reason')+'. Sheet mein manually check karo.';
+      document.getElementById('btnOpenPDF').style.display='none';
     }
-
     document.getElementById('invoiceModal').style.display='block';
   }
 
   function startNewOrder(){
     document.getElementById('invoiceModal').style.display='none';
-    if(lastPdfUrl){
-      document.getElementById('libNum').textContent=lastOrderNum;
-      document.getElementById('libDlBtn').onclick=function(){window.open(lastPdfUrl,'_blank');};
-      document.getElementById('lastInvoiceBar').classList.add('show');
-    }
-    cart=[]; renderCart();
+    cart=[];renderCart();
     currentOrder=genOrderNum();
     document.getElementById('orderNumberDisplay').textContent=currentOrder;
     document.getElementById('customerName').value='';
@@ -529,11 +470,9 @@
     refreshStats();
   }
 
-  function changeQty(delta){
-    var el=document.getElementById('qtyDisplay');
-    el.value=Math.max(1,(parseInt(el.value)||1)+delta);
-  }
+  function changeQty(delta){var el=document.getElementById('qtyDisplay');el.value=Math.max(1,(parseInt(el.value)||1)+delta);}
 
+  // ── Stats ──
   function refreshStats(){
     fetch(SCRIPT_URL+'?action=summary')
     .then(function(r){return r.json();})
@@ -547,10 +486,7 @@
 
   function renderLog(){
     var el=document.getElementById('logList');
-    if(!recentLog.length){
-      el.innerHTML='<div style="color:#4b5563;font-size:12px;text-align:center;padding:18px 0;">Koi scan nahi hua abhi</div>';
-      return;
-    }
+    if(!recentLog.length){el.innerHTML='<div style="color:#4b5563;font-size:12px;text-align:center;padding:18px 0;">Koi scan nahi hua abhi</div>';return;}
     el.innerHTML=recentLog.map(function(s){
       var tc=!s.found?'t-err':s.type==='OUT'?'t-out':'t-in';
       var tl=!s.found?'ERR':s.type;
@@ -559,7 +495,7 @@
     }).join('');
   }
 
-  function showAutoFetch(msg){document.getElementById('autoFetchBar').style.display='flex';document.getElementById('autoFetchMsg').textContent=msg;}
+  function showAutoFetch(msg){var bar=document.getElementById('autoFetchBar');bar.style.display='flex';document.getElementById('autoFetchMsg').textContent=msg;}
   function hideAutoFetch(){document.getElementById('autoFetchBar').style.display='none';}
   function hidePanels(){document.getElementById('productPreview').style.display='none';document.getElementById('actionPanel').style.display='none';}
   function beep(){try{var ctx=new(window.AudioContext||window.webkitAudioContext)(),osc=ctx.createOscillator(),gain=ctx.createGain();osc.connect(gain);gain.connect(ctx.destination);osc.type='square';osc.frequency.value=1100;gain.gain.setValueAtTime(0.2,ctx.currentTime);gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.1);osc.start(ctx.currentTime);osc.stop(ctx.currentTime+0.1);}catch(e){}}
